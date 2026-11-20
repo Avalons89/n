@@ -6,8 +6,6 @@
 # Before booting the OptiPlex:
 #   BIOS: "AC power recovery" = Power On.
 # Fill in every <...>:
-#   <ADMIN_PASSWORD_HASH>  mkpasswd -m sha-512  (console login for the admin user)
-#   <ADMIN_SSH_PUBKEY>     the key that may SSH in over the VPN
 #   <WG_*>                 this device's WireGuard peer on the navegaid VPN (vps-ops skill)
 # Boot: save this as `user-data` (plus an empty `meta-data`) on a USB stick
 # labelled CIDATA and boot the 26.04 live-server installer next to it.
@@ -44,19 +42,27 @@ autoinstall:
   user-data:
     hostname: navis-office
     users:
+      # Passwordless on purpose (asked for during setup): console autologin, no
+      # password, sudo without one. SSH stays key-only. Set a password before
+      # the device leaves Michael's desk.
       - name: navegaid
         groups: [sudo]
         shell: /bin/bash
-        lock_passwd: false
-        passwd: "<ADMIN_PASSWORD_HASH>"
+        sudo: "ALL=(ALL) NOPASSWD:ALL"
         ssh_authorized_keys:
-          - "<ADMIN_SSH_PUBKEY>"
+          - "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAURS3e6LywURf0pzvMBobiL6xFHSOywwbHBNdJ3FnBp claude-code@navis-office"
       - name: navis
         groups: [audio, video, render, input]
         shell: /bin/bash
         lock_passwd: true
 
     write_files:
+      - path: /etc/systemd/system/getty@tty1.service.d/autologin.conf
+        content: |
+          [Service]
+          ExecStart=
+          ExecStart=-/sbin/agetty --autologin navegaid --noclear %I $TERM
+
       - path: /etc/wireguard/wg0.conf
         permissions: "0600"
         content: |
@@ -71,6 +77,9 @@ autoinstall:
           PersistentKeepalive = 25
 
     runcmd:
+      - passwd -d navegaid
+      - systemctl daemon-reload
+      - systemctl restart getty@tty1
       - systemctl enable --now wg-quick@wg0
       # SSH only through the VPN. The kiosk talks to 127.0.0.1, which ufw leaves alone.
       - ufw default deny incoming
