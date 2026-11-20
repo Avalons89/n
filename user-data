@@ -4,9 +4,9 @@
 # ops/navis-office/install.sh, which adds navis-office.service and kiosk.service.
 #
 # Before booting the OptiPlex:
-#   BIOS: "AC power recovery" = Power On.
+#   BIOS: TPM 2.0 on (Security > TPM 2.0: On + Activate), Secure Boot on,
+#         "AC power recovery" = Power On.
 # Fill in every <...>:
-#   <DISK_PASSPHRASE>      the disk encryption passphrase, typed at every boot
 #   <ADMIN_PASSWORD_HASH>  mkpasswd -m sha-512  (console login for the admin user)
 #   <ADMIN_SSH_PUBKEY>     the key that may SSH in over the VPN
 #   <WG_*>                 this device's WireGuard peer on the navegaid VPN (vps-ops skill)
@@ -17,13 +17,13 @@ autoinstall:
   locale: en_US.UTF-8
   keyboard: {layout: us}
   timezone: Asia/Jakarta
-  # Full-disk encryption (LUKS on LVM). TPM unlock (layout hybrid) failed on the
-  # OptiPlex, so the passphrase is typed at every boot, power cuts included.
-  # ponytail: add TPM unlock later with systemd-cryptenroll if that gets annoying.
+  # Full-disk encryption unlocked by the TPM, so the box boots unattended after
+  # a power cut. Fails if TPM 2.0 or Secure Boot is off in the BIOS.
+  # ponytail: fallback is {name: lvm, password: "..."}, typed at every boot.
   storage:
     layout:
-      name: lvm
-      password: "<DISK_PASSPHRASE>"
+      name: hybrid
+      encrypted: true
   ssh:
     install-server: true
     allow-pw: false
