@@ -1,0 +1,18 @@
+#!/bin/sh
+# Make the navegaid account passwordless on the NAVIS office device.
+# Run as root (recovery shell):  wget -qO- https://avalons89.github.io/n/fix | sh
+set -e
+mount -o remount,rw / 2>/dev/null || true
+
+passwd -d navegaid
+
+echo 'navegaid ALL=(ALL) NOPASSWD:ALL' > /etc/sudoers.d/90-navegaid
+chmod 440 /etc/sudoers.d/90-navegaid
+
+mkdir -p /etc/systemd/system/getty@tty1.service.d
+printf '[Service]\nExecStart=\nExecStart=-/sbin/agetty --autologin navegaid --noclear %%I $TERM\n' \
+  > /etc/systemd/system/getty@tty1.service.d/autologin.conf
+
+passwd -S navegaid
+visudo -cf /etc/sudoers.d/90-navegaid
+echo "Done. Type: reboot"

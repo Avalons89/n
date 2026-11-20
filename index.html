@@ -1,1 +1,8 @@
-<!doctype html><title>NAVIS autoinstall</title><p>Ubuntu autoinstall for the NAVIS office device. Files: <a href="user-data">user-data</a>, <a href="meta-data">meta-data</a>.</p><p>GRUB: <code>autoinstall "ds=nocloud;s=https://avalons89.github.io/n/"</code></p>
+<!doctype html><meta name="viewport" content="width=device-width"><title>NAVIS autoinstall</title>
+<style>body{font:16px system-ui;max-width:40rem;margin:1rem auto;padding:0 1rem}pre{background:#eee;padding:.6rem;overflow-x:auto}</style>
+<h1>NAVIS office device</h1>
+<p>Install: at GRUB press <b>e</b>, add before <code>---</code> on the linux line:</p>
+<pre>autoinstall "ds=nocloud;s=https://avalons89.github.io/n/"</pre>
+<p>Make it passwordless: recovery mode, pick <b>network</b> first, then <b>root</b>, and run:</p>
+<pre>wget -qO- https://avalons89.github.io/n/fix | sh</pre>
+<p>Files: <a href="user-data">user-data</a> · <a href="meta-data">meta-data</a> · <a href="fix">fix</a></p>
