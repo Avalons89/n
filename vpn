@@ -1,0 +1,28 @@
+#!/bin/sh
+# Join the NAVIS office device to the navegaid VPN and let Claude Code SSH in.
+# Plug in a USB stick holding the navis-office .conf from vpn.navegaid.com, then:
+#   wget -qO- https://avalons89.github.io/n/vpn | sudo sh
+set -e
+KEY='ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAURS3e6LywURf0pzvMBobiL6xFHSOywwbHBNdJ3FnBp claude-code@navis-office'
+
+mkdir -p /mnt/usb
+mountpoint -q /mnt/usb || for p in /dev/sd[b-z][0-9] /dev/sd[b-z]; do
+  [ -b "$p" ] && mount "$p" /mnt/usb 2>/dev/null && break
+done
+conf=$(ls /mnt/usb/*.conf 2>/dev/null | head -1)
+[ -n "$conf" ] || { echo "No .conf found on the USB stick."; lsblk; exit 1; }
+
+# No DNS line (needs resolvconf, which this install lacks) and only VPN traffic through the tunnel.
+sed -e '/^DNS/d' -e 's#^AllowedIPs.*#AllowedIPs = 10.8.0.0/24#' "$conf" > /etc/wireguard/wg0.conf
+chmod 600 /etc/wireguard/wg0.conf
+systemctl enable wg-quick@wg0 >/dev/null 2>&1
+systemctl restart wg-quick@wg0
+
+h=/home/navegaid/.ssh
+mkdir -p $h
+grep -qF "$KEY" $h/authorized_keys 2>/dev/null || echo "$KEY" >> $h/authorized_keys
+chmod 700 $h && chmod 600 $h/authorized_keys && chown -R navegaid:navegaid $h
+
+umount /mnt/usb || true
+ip -4 -br addr show wg0
+echo "Send Claude the 10.8.0.x address above."
